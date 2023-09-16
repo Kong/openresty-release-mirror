@@ -1,0 +1,70 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Mirror
+
+permissions:
+  contents: write # create release
+
+# Controls when the workflow will run
+on:
+  schedule:
+  - cron:  '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The specific version to mirror for, leave empty to mirror latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: The latest version on openresty.org is?
+        id: openresty-version
+        if: ${{ github.event.inputs.version == '' }}
+        run: |
+          v=$(curl -s http://openresty.org/en/download.html| grep -oP "openresty-[\d\.]+-win32.zip</a"| grep -oP "[\d\.]{4,}")
+          echo "v=$v" >> $GITHUB_OUTPUT
+          echo "$v"
+        
+      - name: The latest tag on this repo is?
+        id: tag-version
+        uses: pozetroninc/github-action-get-latest-release@master
+        continue-on-error: true
+        with:
+          repository: Kong/openresty-release-mirror
+          excludes: prerelease, draft
+  
+      - name: Find the version to mirror
+        id: mirror-version
+        run: |
+          if [[ ! -z "${{ github.event.inputs.version }}" ]]; then
+            v=${{ github.event.inputs.version }}
+          elif [[ ! -z "${{ steps.openresty-version.outputs.v }}" && "${{ steps.openresty-version.outputs.v }}" != "${{ steps.tag-version.outputs.tag }}" ]]; then
+            v=${{ steps.openresty-version.outputs.v }}
+          fi
+          echo "v=$v" >> $GITHUB_OUTPUT
+          echo "$v"
+
+      - name: Download the tarball
+        if: ${{ steps.mirror-version.outputs.v != '' }}
+        run: |
+          wget https://openresty.org/download/openresty-${{ steps.mirror-version.outputs.v }}.tar.gz
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        id: create-release
+        if: ${{ steps.mirror-version.outputs.v != '' }}
+        with:
+          tag: '${{ steps.mirror-version.outputs.v }}'
+          name: '${{ steps.mirror-version.outputs.v }}'
+          draft: false
+          prerelease: false
+          artifacts: openresty-${{ steps.mirror-version.outputs.v }}.tar.gz
+          artifactContentType: application/gzip
+          makeLatest: ${{ github.event.inputs.version != '' && 'false' || 'true' }}
+          skipIfReleaseExists: true
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+          
