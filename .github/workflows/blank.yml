@@ -40,7 +40,7 @@ jobs:
         run: |
           if [[ ! -z "${{ github.event.inputs.version }}" ]]; then
             v=${{ github.event.inputs.version }}
-          elif [[ ! -z "${{ steps.openresty-version.outputs.v }}" && "${{ steps.openresty-version.outputs.v }}" != "${{ steps.tag-version.outputs.tag }}" ]]; then
+          elif [[ ! -z "${{ steps.openresty-version.outputs.v }}" && "${{ steps.openresty-version.outputs.v }}" != "${{ steps.tag-version.outputs.release }}" ]]; then
             v=${{ steps.openresty-version.outputs.v }}
           fi
           echo "v=$v" >> $GITHUB_OUTPUT
