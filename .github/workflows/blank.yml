@@ -29,7 +29,7 @@ jobs:
         
       - name: The latest tag on this repo is?
         id: tag-version
-        uses: pozetroninc/github-action-get-latest-release@master
+        uses: pozetroninc/github-action-get-latest-release@d1dafdb6e338bdab109e6afce581a01858680dfb # v0.7.0
         continue-on-error: true
         with:
           repository: Kong/openresty-release-mirror
@@ -52,7 +52,7 @@ jobs:
           wget https://openresty.org/download/openresty-${{ steps.mirror-version.outputs.v }}.tar.gz
 
       - name: Create release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5 # v1.13.0
         id: create-release
         if: ${{ steps.mirror-version.outputs.v != '' }}
         with:
