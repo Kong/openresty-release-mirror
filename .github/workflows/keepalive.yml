@@ -1,0 +1,31 @@
+name: Keepalive
+
+on:
+  schedule:
+  - cron: '0 0 1 * *'
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Keep workflow alive
+        run: |
+          last_commit_date=$(git log -1 --format=%ct)
+          current_date=$(date +%s)
+          days_since_last_commit=$(( (current_date - last_commit_date) / 86400 ))
+
+          if [ "$days_since_last_commit" -gt 50 ]; then
+            echo "No commits in the last 50 days, creating keepalive commit"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore: keepalive commit to prevent workflow disabling"
+            git push
+          else
+            echo "Repository has recent activity ($days_since_last_commit days since last commit), no action needed"
+          fi
