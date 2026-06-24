@@ -32,10 +32,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          # All versions currently listed on openresty.org.
-          # uniq is load-bearing: each version appears 4x in the HTML (href, title, text, .asc link).
+          # Scrape only href attributes pointing to openresty-X.tar.gz download links.
+          # A broad text match would also hit ngx_openresty-X.tar.gz links (pre-1.9.7
+          # packages with a different prefix whose tarballs no longer exist at the
+          # plain openresty-X.tar.gz URL), causing spurious 404 failures.
           REMOTE_VERSIONS=$(curl -fsSL https://openresty.org/en/download.html \
-            | grep -oP 'openresty-\K[\d.]+(?=\.tar\.gz)' \
+            | grep -oP '(?<=href="https://openresty\.org/download/openresty-)\K[\d.]+(?=\.tar\.gz)' \
             | sort -V | uniq)
 
           if [[ -z "$REMOTE_VERSIONS" ]]; then
